@@ -198,10 +198,10 @@ app.get("/tweets/:tweetId/", authenticateToken, async (request, response) => {
   });
   //console.log(`${getFollowingIds}`);
   //get the tweets made by the users he is following
-  const getTweetIdsQuery = `select tweet_id from tweet where user_id on (${getFollowingIds});`;
+  const getTweetIdsQuery = `select tweet_id from tweet where user_id in (${getFollowingIds});`;
   const getTweetsIdsArray = await db.all(getFollowingIdsQuery);
   const followingTweetIds = getTweetsIdsArray.map((eachId) => {
-    return eachId.tweet_Id;
+    return eachId.tweet_id;
   });
   //console.log(followingTweetIds);
   //console.log(followingTweetIds.includes(parseInt(tweetIds)));
@@ -250,10 +250,10 @@ app.get(
     });
     //console.log(`${getFollowingIds}`);
     //get the tweets made by the users he is following
-    const getTweetIdsQuery = `select tweet_id from tweet where user_id on (${getFollowingIds});`;
+    const getTweetIdsQuery = `select tweet_id from tweet where user_id in (${getFollowingIds});`;
     const getTweetsIdsArray = await db.all(getFollowingIdsQuery);
     const getTweetIds = getTweetsIdsArray.map((eachTweet) => {
-      return eachTweet.tweet_Id;
+      return eachTweet.tweet_id;
     });
     //console.log(getTweetIds);
     //console.log(getTweetIds.includes(parseInt(tweetId)));
@@ -304,16 +304,16 @@ app.get(
     });
     console.log(getFollowingIds);
     //get the tweets made by the users he is following
-    const getTweetIdsQuery = `select tweet_id from tweet where user_id on (${getFollowingIds});`;
+    const getTweetIdsQuery = `select tweet_id from tweet where user_id in (${getFollowingIds});`;
     const getTweetsIdsArray = await db.all(getTweetIdsQuery);
     const getTweetIds = getTweetsIdsArray.map((eachId) => {
-      return eachId.tweet_Id;
+      return eachId.tweet_id;
     });
     console.log(getTweetIds);
     //console.log(getTweetIds.includes(parseInt(tweetId)));
     if (getTweetIds.includes(parseInt(tweetId))) {
       const getUserNameReplyTweetsQuery = `select user.name,reply.reply from user
-         inner join reply on user.tweet_id= reply.tweet_id where reply.tweet_id=${tweetId};`;
+         inner join reply on user.user_id= reply.user_id where reply.tweet_id=${tweetId};`;
       const getUserNameReplyTweets = await db.all(getUserNameReplyTweetsQuery);
       response.send(
         convertUserNameReplyedDBObjectToResponseObject(getUserNameReplyTweets)
@@ -332,19 +332,19 @@ app.get("/user/tweets/", authenticateToken, async (request, response) => {
   console.log(getUserId);
 
   //get the tweets made by the users
-  const getTweetIdsQuery = `select tweet_id from tweet where user_id = ${getUserId.userId};`;
+  const getTweetIdsQuery = `select tweet_id from tweet where user_id = ${getUserId.user_id};`;
   const getTweetsIdsArray = await db.all(getTweetIdsQuery);
   const getTweetIds = getTweetsIdsArray.map((eachId) => {
-    return parseInt(eachId.tweet_Id);
+    return parseInt(eachId.tweet_id);
   });
   console.log(getTweetIds);
 });
 //api 10
 app.post("/user/tweets/", authenticateToken, async (request, response) => {
   let { username } = request;
-  const getUserIdQuery = `select user_id from user where username=${username};`;
+  const getUserIdQuery = `select user_id from user where username='${username}';`;
   const getUserId = await db.get(getUserIdQuery);
-  console.log(getUserId);
+  // console.log(getUserId);
   //console.log(getUserId.user_id);
   const { tweet } = request.body;
   //console.log(tweet);
@@ -353,7 +353,7 @@ app.post("/user/tweets/", authenticateToken, async (request, response) => {
   console.log(currentDate.toISOString().replace("T", " "));
 
   const postRequestQuery = `insert into tweet(tweet,user_id,date_time) 
-    values('${tweet}',${getUserId.user_id},${dateTime});`;
+    values('${tweet}',${getUserId.user_id},${currentDate});`;
   const responseResult = await db.run(postRequestQuery);
   const tweet_id = responseResult.lastId;
   response.send("Created a Tweet");
@@ -367,19 +367,19 @@ app.delete(
     const { tweetId } = request.params;
     //console.log(tweetId);
     let { username } = request;
-    const getUserIdQuery = `select user_id from user where username=${username};`;
+    const getUserIdQuery = `select user_id from user where username='${username}';`;
     const getUserId = await db.get(getUserIdQuery);
     //console.log(getUserId);
 
     //get the tweets made by the users
-    const getUserTweetsListQuery = `select tweet_id from tweet where user_id = ${getUserId.userId};`;
+    const getUserTweetsListQuery = `select tweet_id from tweet where user_id = ${getUserId.user_id};`;
     const getUserTweetsListArray = await db.all(getUserTweetsListQuery);
     const getUserTweetsList = getUserTweetsListArray.map((eachId) => {
-      return parseInt(eachId.tweet_Id);
+      return eachId.tweet_id;
     });
     console.log(getUserTweetsList);
     if (getUserTweetsList.includes(parseInt(tweetId))) {
-      const deleteTweetQuery = `delete from tweet where tweet_id =${tweetId};`;
+      const deleteTweetQuery = `delete from tweet where tweet_id=${tweetId};`;
       await db.run(deleteTweetQuery);
       response.send("Tweet Removed");
     } else {
